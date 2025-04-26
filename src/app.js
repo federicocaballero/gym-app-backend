@@ -5,12 +5,14 @@ const bodyParser = require("body-parser");
 const morgan = require("morgan");
 const helmet = require("helmet");
 const cors = require("cors");
+const errorHandler = require("./middlewares/errorHandler");
 const PORT = process.env.DB_PORT || 3000;
+
 // Rutas
-const autRoutes = require("./routes/authRoutes")
-// const cartRoutes = require("./routes/cartRoutes")
+const authRoutes = require("./routes/authRoutes")
+const productRoutes = require("./routes/productRoutes")
+const ventasRoutes = require("./routes/ventasRoutes")
 // const paymentRoutes = require("./routes/paymentRoutes")
-// const productRoutes = require("./routes/productRoutes")
 
 // Inicializaciones
 const app = express();
@@ -31,12 +33,12 @@ app.use(helmet()); // Seguridad: protege la app
 app.use(morgan("dev")); // Muestra por consola las peticiones
 app.use(bodyParser.json()); // Permite recibir JSON
 app.use(bodyParser.urlencoded({ extended: true })); // Permite recibir formularios
-
+app.use(errorHandler)//controlador de errores
 // Rutas
-app.use("/api/auth", autRoutes);
-// app.use("/api/cart", cartRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/products", productRoutes);
+app.use("/api/ventas", ventasRoutes);
 // app.use("/api/payment", paymentRoutes);
-// app.use("/api/products", productRoutes);
 
 app.listen(PORT, () => {
     console.log(`Servidor corriendo en http://localhost:${PORT}`);
