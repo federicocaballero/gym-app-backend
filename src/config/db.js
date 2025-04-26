@@ -8,7 +8,7 @@ const pool = new Pool({
     port: process.env.DB_PORT,
     ssl: {
         rejectUnauthorized: false,
-        ca: fs.readFileSync("src/config/ca.crt").toString()
+        ca: fs.readFileSync("src/certs/ca.crt").toString()
     }
 })
 
