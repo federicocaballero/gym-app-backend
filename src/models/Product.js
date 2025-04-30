@@ -18,17 +18,19 @@ exports.crearProducto = async ({
     precio_costo,
     precio_venta,
     stock,
-    stock_min,
-    eliminado,
-    idCategoria
+    stock_min
 }) => {
-    const { rows } = await pool.query(
-        `INSERT INTO ${tabla}
-      (nombre, imagen, marca, descripcion, precio_costo, precio_venta, stock, stock_min, eliminado, "idCategoria")
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-      RETURNING *`,
-        [nombre, imagen, marca, descripcion, precio_costo, precio_venta, stock, stock_min, eliminado, idCategoria]
-    );
+    const { rows } = await pool.query(`SELECT * FROM sp_crear_producto($1, $2, $3, $4, $5, $6, $7, $8)`,
+        [
+            nombre,
+            descripcion,
+            precio_costo,
+            precio_venta,
+            stock,
+            stock_min,
+            marca,  // idMarca
+            imagen
+        ]);
     return rows[0];
 };
 
