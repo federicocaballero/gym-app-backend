@@ -13,7 +13,7 @@ exports.mostrarProductoPorId = async (id) => {
 exports.crearProducto = async ({
     nombre,
     imagen,
-    marca,
+    idMarca,
     descripcion,
     precio_costo,
     precio_venta,
@@ -28,7 +28,7 @@ exports.crearProducto = async ({
             precio_venta,
             stock,
             stock_min,
-            marca,  // idMarca
+            idMarca,  // ididMarca
             imagen
         ]);
     return rows[0];

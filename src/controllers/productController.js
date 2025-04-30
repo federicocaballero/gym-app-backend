@@ -22,8 +22,10 @@ exports.getProduct = async (req, res, next) => {
 exports.createProduct = async (req, res, next) => {
     try {
         // Validaciones básicas
-        const { nombre, precio_costo, precio_venta, marca, stock, stock_min, imagen } = req.body;
-        
+        const { nombre, precio_costo, precio_venta, idMarca, stock, stock_min, imagen } = req.body;
+        if (idMarca === undefined || idMarca === null) {
+            return res.status(400).json({ error: 'El campo idMarca es requerido' });
+        }
         if (!nombre || nombre.trim() === '') {
             return res.status(400).json({ error: 'El nombre del producto es requerido' });
         }
@@ -36,8 +38,8 @@ exports.createProduct = async (req, res, next) => {
             return res.status(400).json({ error: 'El precio de venta no puede ser menor al precio de costo' });
         }
 
-        if (marca < 1 || marca > 5) {
-            return res.status(400).json({ error: 'El ID de marca debe estar entre 1 y 5' });
+        if (idMarca < 1 || idMarca > 5) {
+            return res.status(400).json({ error: 'El ID de idMarca debe estar entre 1 y 5' });
         }
 
         if (stock < 0 || stock_min < 0) {
