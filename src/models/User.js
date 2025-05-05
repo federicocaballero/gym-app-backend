@@ -4,11 +4,11 @@ exports.mostrarRolPorId = async (idAuthSupabase) => {
     const { rows } = await pool.query(`SELECT "idPerfil" FROM ${tabla} where id_auth_supabase = $1`, [idAuthSupabase]);
     return rows[0]?.idPerfil
 }
-
 exports.registerInPostgreSQL = async (userData) => {
+    //TODO crear procedimiento almacenado
     const query = `
         INSERT INTO ${tabla} (
-            idPerfil,
+            idperfil,
             id_auth_supabase,
             nombre,
             apellido,
@@ -16,34 +16,33 @@ exports.registerInPostgreSQL = async (userData) => {
             email,
             eliminado,
             dni,
-            fechaNacimiento,
+            fechanacimiento,
             telefono
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
         RETURNING 
             id,
-            idPerfil,
+            idperfil,
             id_auth_supabase,
             nombre,
             apellido,
             usuario,
             email,
             dni,
-            fechaNacimiento,
+            fechanacimiento,
             telefono
     `;
 
-
     const values = [
-        userData.idPerfil,
+        userData.idperfil,
         userData.id_auth_supabase,
         userData.nombre,
         userData.apellido,
-        userData.usuario,  // Cambiado de 'username' a 'usuario'
+        userData.usuario,
         userData.email,
-        false,  // Valor por defecto para 'eliminado'
+        false,
         userData.dni,
-        userData.fechaNacimiento,  // Cambiado de 'fecha_nacimiento'
-        userData.telefono  // Sin acento
+        userData.fechanacimiento,
+        userData.telefono
     ];
 
     try {

@@ -1,22 +1,26 @@
 const supabase = require("../config/supabase");
-// exports.signUpNewEmail = async (req, res) => {
-//     const { email, password } = req.body;
-//     const { data, error } = await supabase.auth.signUp({ email, password })
-//     if (error) return res.status(400).json({ message: "Error al registrar el usuario" });
-//     res.status(200).json({ user: data.user });
-// }
+const authModel = require("../models/User");
+exports.signUpNewEmail = async (req, res, next) => {
+    // 1. Validación y preparación de datos
+    const requiredFields = ['idperfil', 'nombre', 'apellido', 'usuario', 'contraseña', 'email'];
+    const missingFields = requiredFields.filter(field => !req.body[field]);
 
-exports.signUpNewEmail = async (req, res) => {
+    if (missingFields.length > 0) {
+        return res.status(400).json({
+            success: false,
+            message: `Faltan campos obligatorios: ${missingFields.join(', ')}`
+        });
+    }
     let supabaseUser;
     const {
-        idPerfil,
+        idperfil,
         nombre,
         apellido,
         usuario,
         contraseña,
         email,
         dni,
-        fechaNacimiento,
+        fechanacimiento,
         telefono
     } = req.body;
 
@@ -26,7 +30,7 @@ exports.signUpNewEmail = async (req, res) => {
             email,
             password: contraseña,
             options: {
-                data: {  // Datos que se guardarán en auth.users
+                data: {
                     nombre,
                     apellido,
                     usuario
@@ -44,22 +48,20 @@ exports.signUpNewEmail = async (req, res) => {
 
         supabaseUser = data.user; // Asignamos el usuario de Supabase
 
-        // 2. Preparar datos para PostgreSQL
-        const userData = {
-            idPerfil,  // Nombre exacto de la tabla
-            id_auth_supabase: supabaseUser.id,  // Nombre exacto de la tabla
+        // 3. Registrar en PostgreSQL
+        console.log('Datos a insertar en PostgreSQL:', userData);
+        const registeredUser = await authModel.registerInPostgreSQL({
+            idperfil,
+            id_auth_supabase: supabaseUser.id,
             nombre,
             apellido,
-            usuario,  // Nombre exacto de la tabla
+            usuario,
             email,
             dni,
-            fechaNacimiento,  // Nombre exacto de la tabla
+            fechanacimiento,
             telefono,
-            eliminado: false  // Campo requerido por la tabla
-        };
-
-        // 3. Registrar en PostgreSQL
-        const registeredUser = await authModel.registerInPostgreSQL(userData);
+            eliminado: false
+        });
 
         res.status(201).json({
             success: true,
@@ -69,19 +71,13 @@ exports.signUpNewEmail = async (req, res) => {
                 auth_id: supabaseUser.id
             }
         });
-
     } catch (error) {
-        console.error()
         // Revertir registro en Supabase si existe
-        if (authData?.user?.id) {
-            await supabase.auth.admin.deleteUser(authData.user.id);
+        if (supabaseUser?.id) {
+            await supabase.auth.admin.deleteUser(supabaseUser.id)
+                .catch(err => console.error('Error al revertir registro:', err));
         }
-
-        res.status(500).json({
-            success: false,
-            message: "Error en el registro",
-            error: process.env.NODE_ENV === 'development' ? error.message : undefined
-        });
+        next(error);
     }
 };
 
