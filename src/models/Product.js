@@ -28,7 +28,7 @@ exports.crearProducto = async ({
             precio_venta,
             stock,
             stock_min,
-            idMarca,  // ididMarca
+            idMarca,
             imagen
         ]);
     return rows[0];
