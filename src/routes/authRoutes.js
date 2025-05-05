@@ -6,7 +6,7 @@ const router = express.Router();
 const { signInNewSession, signUpNewEmail } = require("../controllers/authController")
 
 // Rutas
-router.post("/signin", signInNewSession);
 router.post("/signup", signUpNewEmail);
+router.post("/signin", signInNewSession);
 
 module.exports = router;
