@@ -34,16 +34,28 @@ exports.crearProducto = async ({
     return rows[0];
 };
 
-
-exports.editarProducto = async (name, price, imagen, id) => {
-    const { rows } = await pool.query(`UPDATE ${tabla} SET name = $1, price = $2, imagen = $3 WHERE id = $4 RETURNING *`, [name, price, imagen, id]);
+exports.eliminarProducto = async (id) => {
+    const { rows } = await pool.query(`
+        UPDATE ${tabla} 
+        SET eliminado = true 
+        WHERE id = $1 
+        RETURNING *
+        `, [id]);
     return rows[0]
 }
 
-//TODO: implementar baja logica sin borrar completamente de la BD
-//TODO: implementar alta de producto por id
+exports.altaProducto = async (id) => {
+    const { rows } = await pool.query(`
+        UPDATE ${tabla} 
+        SET eliminado = false 
+        WHERE id = $1 
+        RETURNING *
+        `, [id]);
+    return rows[0]
+}
 //TODO: recuperar productos por estado (activo o inactivo)
-exports.eliminarProducto = async (id) => {
-    const { rows } = await pool.query(`DELETE FROM ${tabla} WHERE id = $1 RETURNING *`, [id]);
+//TODO: actualizar modelo para editar producto por id
+exports.editarProducto = async (name, price, imagen, id) => {
+    const { rows } = await pool.query(`UPDATE ${tabla} SET name = $1, price = $2, imagen = $3 WHERE id = $4 RETURNING *`, [name, price, imagen, id]);
     return rows[0]
 }
