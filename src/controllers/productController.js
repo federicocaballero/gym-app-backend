@@ -1,4 +1,13 @@
-const { crearProducto, mostrarProductosTodos, editarProducto, eliminarProducto, mostrarProductoPorId, altaProducto } = require("../models/Product");
+const {
+    crearProducto,
+    mostrarProductosTodos,
+    editarProducto,
+    eliminarProducto,
+    mostrarProductoPorId,
+    altaProducto,
+    obtenerActivos,
+    obtenerInactivos
+} = require("../models/Product");
 
 exports.getProducts = async (req, res, next) => {
     try {
@@ -81,11 +90,48 @@ exports.reactivateProduct = async (req, res, next) => {
 exports.updateProduct = async (req, res, next) => {
     //TODO: agregar validaciones y atributos que se pueden editar
     const { id } = req.params;
-    const { name, price, imagen } = req.body;
+    const {
+        nombre,
+        imagen,
+        idMarca,
+        descripcion,
+        precio_costo,
+        precio_venta,
+        stock,
+        stock_min,
+        idCategoria } = req.body;
     try {
-        const response = await editarProducto(name, price, imagen, id);
+        const response = await editarProducto(
+            nombre,
+            imagen,
+            idMarca,
+            descripcion,
+            precio_costo,
+            precio_venta,
+            stock,
+            stock_min,
+            idCategoria,
+            id);
         res.status(200).json(response);
     } catch (error) {
         next(error);
+    }
+}
+
+exports.getActiveProducts = async (req, res, next) => {
+    try {
+        const result = await obtenerActivos();
+        res.status(200).json(result);
+    } catch (error) {
+        next(error); 
+    }
+}
+
+exports.getInactiveProducts = async (req, res, next) => {
+    try {
+        const result = await obtenerInactivos();
+        res.status(200).json(result);
+    } catch (error) {
+        next(error); 
     }
 }
