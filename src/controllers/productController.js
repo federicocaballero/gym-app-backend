@@ -1,4 +1,13 @@
-const { crearProducto, mostrarProductosTodos, editarProducto, eliminarProducto, mostrarProductoPorId } = require("../models/Product");
+const {
+    crearProducto,
+    mostrarProductosTodos,
+    editarProducto,
+    eliminarProducto,
+    mostrarProductoPorId,
+    altaProducto,
+    obtenerActivos,
+    obtenerInactivos
+} = require("../models/Product");
 
 exports.getProducts = async (req, res, next) => {
     try {
@@ -29,11 +38,11 @@ exports.createProduct = async (req, res, next) => {
         if (!nombre || nombre.trim() === '') {
             return res.status(400).json({ error: 'El nombre del producto es requerido' });
         }
-        
+
         if (precio_costo <= 0 || precio_venta <= 0) {
             return res.status(400).json({ error: 'Los precios deben ser mayores que cero' });
         }
-        
+
         if (precio_venta < precio_costo) {
             return res.status(400).json({ error: 'El precio de venta no puede ser menor al precio de costo' });
         }
@@ -58,17 +67,6 @@ exports.createProduct = async (req, res, next) => {
     }
 };
 
-exports.updateProduct = async (req, res, next) => {
-    const { id } = req.params;
-    const { name, price, imagen } = req.body;
-    try {
-        const response = await editarProducto(name, price, imagen, id);
-        res.status(200).json(response);
-    } catch (error) {
-        next(error);
-    }
-}
-
 exports.deleteProduct = async (req, res, next) => {
     const { id } = req.params;
     try {
@@ -76,5 +74,64 @@ exports.deleteProduct = async (req, res, next) => {
         res.status(200).json(response);
     } catch (error) {
         next(error);
+    }
+}
+
+exports.reactivateProduct = async (req, res, next) => {
+    const { id } = req.params;
+    try {
+        const response = await altaProducto(id);
+        res.status(200).json(response);
+    } catch (error) {
+        next(error);
+    }
+}
+
+exports.updateProduct = async (req, res, next) => {
+    //TODO: agregar validaciones y atributos que se pueden editar
+    const { id } = req.params;
+    const {
+        nombre,
+        imagen,
+        idMarca,
+        descripcion,
+        precio_costo,
+        precio_venta,
+        stock,
+        stock_min,
+        idCategoria } = req.body;
+    try {
+        const response = await editarProducto(
+            nombre,
+            imagen,
+            idMarca,
+            descripcion,
+            precio_costo,
+            precio_venta,
+            stock,
+            stock_min,
+            idCategoria,
+            id);
+        res.status(200).json(response);
+    } catch (error) {
+        next(error);
+    }
+}
+
+exports.getActiveProducts = async (req, res, next) => {
+    try {
+        const result = await obtenerActivos();
+        res.status(200).json(result);
+    } catch (error) {
+        next(error); 
+    }
+}
+
+exports.getInactiveProducts = async (req, res, next) => {
+    try {
+        const result = await obtenerInactivos();
+        res.status(200).json(result);
+    } catch (error) {
+        next(error); 
     }
 }
