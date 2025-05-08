@@ -6,6 +6,7 @@ const morgan = require("morgan");
 const helmet = require("helmet");
 const cors = require("cors");
 const errorHandler = require("./middlewares/errorHandler");
+const setupSwaggerDocs = require('./docs/swagger')
 const PORT = process.env.DB_PORT || 3000;
 
 // Rutas
@@ -38,6 +39,7 @@ app.use(errorHandler)//controlador de errores
 app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/ventas", ventasRoutes);
+setupSwaggerDocs(app)
 // app.use("/api/payment", paymentRoutes);
 
 app.listen(PORT, () => {
