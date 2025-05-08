@@ -7,7 +7,6 @@ exports.isAdmin = async (req, res, next) => {
 
     try {
         const userRole = await mostrarRolPorId(user.id);
-        console.log("🚀 ~ exports.isAdmin= ~ userRole:", typeof userRole)
         if (Number(userRole) !== 1) {
             return res.status(403).json({ error: "Forbidden" });
         }
@@ -15,6 +14,5 @@ exports.isAdmin = async (req, res, next) => {
     } catch (error) {
         next(error);
     }
-    // next();
 }
 
