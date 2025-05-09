@@ -3,7 +3,7 @@ const express = require("express");
 const router = express.Router();
 
 // Controladores
-const { signInNewSession, signUpNewEmail } = require("../controllers/authController")
+const { signInNewSession, signUpNewEmail, getProfiles } = require("../controllers/authController")
 
 /**
  * @swagger
@@ -64,4 +64,21 @@ router.post("/signup", signUpNewEmail);
  */
 router.post("/signin", signInNewSession);
 
+/**
+ * @swagger
+ * /auth/categories:
+ *   get:
+ *     summary: Obtener todas las categorias
+ *     tags: [Autenticación]
+ *     responses:
+ *       200:
+ *         description: Lista de categorias
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Category'
+ */
+router.get("/profiles", getProfiles);
 module.exports = router;

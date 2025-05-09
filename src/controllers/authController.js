@@ -88,3 +88,11 @@ exports.signInNewSession = async (req, res) => {
     res.status(200).json({ session: data.session });
 }
 
+exports.getProfiles = async (req, res, next) => {
+    try {
+        const result = await authModel.obtenerPerfiles();
+        res.status(200).json(result);
+    } catch (error) {
+        next(error);
+    }
+}
