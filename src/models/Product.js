@@ -73,3 +73,8 @@ exports.obtenerInactivos = async () => {
     const { rows } = await pool.query(`SELECT * FROM ${tabla} WHERE eliminado = true ORDER BY id ASC`);
     return rows
 }
+
+exports.obtenerCategorias = async () => {
+    const { rows } = await pool.query(`SELECT * FROM categoria ORDER BY "idCategoria" ASC`);
+    return rows
+}

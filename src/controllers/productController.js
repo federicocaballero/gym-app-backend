@@ -6,7 +6,8 @@ const {
     mostrarProductoPorId,
     altaProducto,
     obtenerActivos,
-    obtenerInactivos
+    obtenerInactivos,
+    obtenerCategorias
 } = require("../models/Product");
 
 exports.getProducts = async (req, res, next) => {
@@ -130,6 +131,15 @@ exports.getActiveProducts = async (req, res, next) => {
 exports.getInactiveProducts = async (req, res, next) => {
     try {
         const result = await obtenerInactivos();
+        res.status(200).json(result);
+    } catch (error) {
+        next(error); 
+    }
+}
+
+exports.getCategories = async (req, res, next) => {
+    try {
+        const result = await obtenerCategorias();
         res.status(200).json(result);
     } catch (error) {
         next(error); 

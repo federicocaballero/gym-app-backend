@@ -10,7 +10,8 @@ const {
     deleteProduct,
     reactivateProduct,
     getActiveProducts,
-    getInactiveProducts
+    getInactiveProducts,
+    getCategories
 } = require("../controllers/productController");
 
 // Middlewares
@@ -27,6 +28,7 @@ router.get("/inactiveProducts", authenticate, isAdmin, getInactiveProducts);
 
 //No necesitan autenticacion
 router.get("/", getProducts);
+router.get("/categories", getCategories);
 router.get("/active", getActiveProducts);
 router.get("/:id", getProduct);
 
@@ -38,6 +40,20 @@ router.get("/:id", getProduct);
  */
 
 /**
+ * @swagger
+ * /categories:
+ *   get:
+ *     summary: Obtener todos las categorias
+ *     tags: [Productos]
+ *     responses:
+ *       200:
+ *         description: Lista de categorias
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Proucto'
  * @swagger
  * /products:
  *   get:
