@@ -1,48 +1,52 @@
-const { createPerson, findByDniLast3 } = require('../models/Person');
 const db = require('../config/db');
+const { createPerson, findByDniLast3 } = require('../models/Person');
+const { createAttendance } = require('../models/Attendance');
 /**
  * Controlador para crear un alumno.
  * Espera en el body: { dni, first_name, last_name, role, phone, state }
  */
 async function createPersonHandler(req, res, next) {
+  const { dni, first_name, last_name, role, phone, state, adminId } = req.body;
+  const client = await db.connect();   // ①
+
   try {
-    const { dni, first_name, last_name, role, phone, state } = req.body;
+    await client.query('BEGIN');        // ②
 
-    // Validaciones básicas
-    if (!first_name || !last_name || !dni || !role || !state || !phone) {
-      return res
-        .status(400)
-        .json({ error: 'Todos los campos son obligatorios.' });
-    }
-    // 1️⃣ Inserta la persona en la base de datos
-    const person = await createPerson({ dni, first_name, last_name, role, phone, state });
-
-    // 2️⃣ Recupera el texto del rol
-    const {
-      rows: [roleRow]
-    } = await db.query(
-      `SELECT rol 
-         FROM "Role" 
-        WHERE "idRol" = $1`,
-      [person.idRol]
+    // 1) Inserción de Person
+    const { rows: [person] } = await client.query(
+      `
+      INSERT INTO "Person"
+        (dni,nombre,apellido,"idRol",telefono,estado)
+      VALUES
+        (
+          $1,$2,$3,
+          (SELECT "idRol" FROM "Role" WHERE rol = $4),
+          $5,$6
+        )
+      RETURNING *;
+      `,
+      [dni, first_name, last_name, role, phone, state]
     );
 
-    // 3️⃣ Construye el objeto de respuesta reemplazando idRol por role
-    const response = {
-      idPersona: person.idPersona,
-      dni: person.dni,
-      nombre: person.nombre,
-      apellido: person.apellido,
-      role: roleRow ? roleRow.rol : null,
-      telefono: person.telefono,
-      estado: person.estado,
-      fechaDeAlta: person.fechaDeAlta
-    };
+    // 2) Inserción en Attendances
+    await client.query(
+      `
+      INSERT INTO "Attendances"
+        ("idPersona", fecha, estado, "registradoPor")
+      VALUES ($1, CURRENT_DATE, 'present', $2)
+      `,
+      [person.idPersona, adminId || null]
+    );
 
+    await client.query('COMMIT');       // ③
 
-    res.status(201).json(response);
+    // 3) Devuelve el objeto creado
+    res.status(201).json(person);
   } catch (err) {
-    next(err); // Pasa el error al middleware de manejo de errores
+    await client.query('ROLLBACK');     // ④
+    next(err);
+  } finally {
+    client.release();                   // ⑤
   }
 }
 
