@@ -46,6 +46,7 @@ async function createPersonHandler(req, res, next) {
   }
 }
 
+// Busca personas por ultimos 3 numeros de DNI y opcional apellido
 async function findByDniLast3Handler(req, res, next) {
   try {
     const { last3, apellido } = req.query;
