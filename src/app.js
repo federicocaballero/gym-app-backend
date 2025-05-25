@@ -10,10 +10,7 @@ const setupSwaggerDocs = require('./docs/swagger')
 const PORT = process.env.DB_PORT || 3000;
 
 // Rutas
-const authRoutes = require("./routes/authRoutes")
-const productRoutes = require("./routes/productRoutes")
-const ventasRoutes = require("./routes/ventasRoutes")
-// const paymentRoutes = require("./routes/paymentRoutes")
+studentsRoutes = require("./routes/studentsRoutes")
 
 // Inicializaciones
 const app = express();
@@ -36,11 +33,11 @@ app.use(bodyParser.json()); // Permite recibir JSON
 app.use(bodyParser.urlencoded({ extended: true })); // Permite recibir formularios
 app.use(errorHandler)//controlador de errores
 // Rutas
-app.use("/api/auth", authRoutes);
-app.use("/api/products", productRoutes);
-app.use("/api/ventas", ventasRoutes);
+app.get('/', (req, res) => {
+  res.send('API GYM funcionando');
+});
+app.use("/api/alumnos", studentsRoutes);
 setupSwaggerDocs(app)
-// app.use("/api/payment", paymentRoutes);
 
 app.listen(PORT, () => {
     console.log(`Servidor corriendo en http://localhost:${PORT}`);
