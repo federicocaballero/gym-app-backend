@@ -1,52 +1,73 @@
 const db = require('../config/db');
-const { createPerson, findByDniLast3 } = require('../models/Person');
+const { createPerson, findByDniLast3, getClientsByCuoteStatus } = require('../models/Person');
 const { createAttendance } = require('../models/Attendance');
-/**
- * Controlador para crear un alumno.
- * Espera en el body: { dni, first_name, last_name, role, phone, state }
- */
+const { createPayment } = require('../models/Payments');
+
+//Crea una persona
 async function createPersonHandler(req, res, next) {
-  const { dni, first_name, last_name, role, phone, state, adminId } = req.body;
-  const client = await db.connect();   // ①
+  const {
+    dni, first_name, last_name, role, phone, state,
+    adminId,    // UUID del admin que registra (puede ser null)
+    amount,     // si paga ahora (>0)
+    trialDays   // si periodo de prueba (>0)
+  } = req.body;
 
+  // Validar campos obligatorios
+  if (![first_name, last_name, dni, role, phone, state].every(Boolean)) {
+    return res.status(400).json({ error: 'Faltan datos obligatorios.' });
+  }
+  if (!(amount > 0) && !(trialDays > 0)) {
+    return res.status(400).json({ error: 'Debe enviar amount>0 o trialDays>0.' });
+  }
+
+  const client = await db.connect();
   try {
-    await client.query('BEGIN');        // ②
+    await client.query('BEGIN');
 
-    // 1) Inserción de Person
-    const { rows: [person] } = await client.query(
-      `
-      INSERT INTO "Person"
-        (dni,nombre,apellido,"idRol",telefono,estado)
-      VALUES
-        (
-          $1,$2,$3,
-          (SELECT "idRol" FROM "Role" WHERE rol = $4),
-          $5,$6
-        )
-      RETURNING *;
-      `,
-      [dni, first_name, last_name, role, phone, state]
+    // 1️⃣ Crear la persona
+    const person = await createPerson(
+      { dni, first_name, last_name, role, phone, state },
+      client
     );
 
-    // 2) Inserción en Attendances
-    await client.query(
-      `
-      INSERT INTO "Attendances"
-        ("idPersona", fecha, estado, "registradoPor")
-      VALUES ($1, CURRENT_DATE, 'present', $2)
-      `,
-      [person.idPersona, adminId || null]
-    );
+    // 2️⃣ Si paga ahora: registro asistencia + pago
+    if (amount > 0) {
+      await createAttendance(
+        { personId: person.idPersona, status: 'present', adminId },
+        client
+      );
 
-    await client.query('COMMIT');       // ③
+      const periodFor = new Date().toISOString().slice(0, 10);
+      const exp = new Date();
+      exp.setMonth(exp.getMonth() + 1);
+      const expiresAt = exp.toISOString().slice(0, 10);
 
-    // 3) Devuelve el objeto creado
+      await createPayment(
+        { clientId: person.idPersona, amount, periodFor, expiresAt, type: 'paid' },
+        client
+      );
+
+    } else {
+      // 3️⃣ Periodo de prueba: solo pago tipo trial
+      const startDate = new Date().toISOString().slice(0, 10);
+      const exp = new Date();
+      exp.setDate(exp.getDate() + trialDays);
+      const expiresAt = exp.toISOString().slice(0, 10);
+
+      await createPayment(
+        { clientId: person.idPersona, amount: 0, periodFor: startDate, expiresAt, type: 'trial' },
+        client
+      );
+    }
+
+    await client.query('COMMIT');
     res.status(201).json(person);
+
   } catch (err) {
-    await client.query('ROLLBACK');     // ④
+    await client.query('ROLLBACK');
     next(err);
   } finally {
-    client.release();                   // ⑤
+    client.release();
   }
 }
 
@@ -81,7 +102,32 @@ async function findByDniLast3Handler(req, res, next) {
   }
 }
 
+//Obtiene clientes filtrando por estado de la cuota
+async function getClientsByCuote(req, res, next) {
+  try {
+    let { quotaStatus = 'all' } = req.query;
+    quotaStatus = quotaStatus.toLowerCase();
+
+    if (!['all', 'active', 'expired'].includes(quotaStatus)) {
+      return res
+        .status(400)
+        .json({ error: "quotaStatus inválido. Usa 'all', 'active' o 'expired'." });
+    }
+
+    const clients = await getClientsByCuoteStatus({ quotaStatus });
+    return res.json({
+      count: clients.length,
+      clients
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+
+
 module.exports = {
   createPersonHandler,
-  findByDniLast3Handler
+  findByDniLast3Handler,
+  getClientsByCuote
 };
