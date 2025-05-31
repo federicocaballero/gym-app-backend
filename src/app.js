@@ -11,7 +11,7 @@ const PORT = process.env.DB_PORT || 3000;
 
 // Rutas
 personRoutes = require("./routes/personRoutes")
-
+paymentRoutes = require("./routes/paymentRoutes")
 // Inicializaciones
 const app = express();
 
@@ -37,6 +37,7 @@ app.get('/', (req, res) => {
   res.send('API GYM funcionando');
 });
 app.use("/api/personas", personRoutes);
+app.use("/api/payment", paymentRoutes);
 setupSwaggerDocs(app)
 
 app.listen(PORT, () => {

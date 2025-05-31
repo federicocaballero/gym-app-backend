@@ -3,7 +3,7 @@ const table = '"Person"';
 /**
  * Inserta una persona en la base de datos en la tabla "Person".
  */
-async function createPerson({ dni, first_name, last_name, role, phone, state }, client = db) {
+async function createPerson({ dni, first_name, last_name, role, phone, state}, client = db) {
   const text = `
     INSERT INTO ${table}
       (dni, nombre, apellido, "idRol", telefono, estado)
@@ -42,7 +42,7 @@ async function findByDniLast3({ last3, lastName }) {
   return rows;
 }
 async function getClientsByCuoteStatus({ quotaStatus = 'all' } = {}) {
-  const values = ['alumno'];
+  const values = ['cliente'];
   let text = `
     SELECT
       p."idPersona",

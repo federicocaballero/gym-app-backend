@@ -43,7 +43,7 @@ async function createPersonHandler(req, res, next) {
       const expiresAt = exp.toISOString().slice(0, 10);
 
       await createPayment(
-        { clientId: person.idPersona, amount, periodFor, expiresAt, type: 'paid' },
+        { clientId: person.idPersona, amount, periodFor, expiresAt , adminId, type: 'paid', },
         client
       );
 
@@ -123,7 +123,6 @@ async function getClientsByCuote(req, res, next) {
     next(err);
   }
 }
-
 
 
 module.exports = {
