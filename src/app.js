@@ -10,8 +10,8 @@ const setupSwaggerDocs = require('./docs/swagger')
 const PORT = process.env.DB_PORT || 3000;
 
 // Rutas
-studentsRoutes = require("./routes/studentsRoutes")
-
+personRoutes = require("./routes/personRoutes")
+paymentRoutes = require("./routes/paymentRoutes")
 // Inicializaciones
 const app = express();
 
@@ -36,7 +36,8 @@ app.use(errorHandler)//controlador de errores
 app.get('/', (req, res) => {
   res.send('API GYM funcionando');
 });
-app.use("/api/alumnos", studentsRoutes);
+app.use("/api/personas", personRoutes);
+app.use("/api/payment", paymentRoutes);
 setupSwaggerDocs(app)
 
 app.listen(PORT, () => {
