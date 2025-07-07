@@ -13,4 +13,19 @@ async function createPayment({ clientId, amount, periodFor, expiresAt, adminId ,
   return rows[0];
 }
 
-module.exports = { createPayment };
+/**
+ * Retorna la última cuota registrada de un socio.
+ */
+async function getLastPaymentByPersonId(idPersona) {
+  const text = `
+    SELECT *
+    FROM "Payments"
+    WHERE "idPersona" = $1
+    ORDER BY "fechaVencimiento" DESC
+    LIMIT 1
+  `;
+  const { rows } = await db.query(text, [idPersona]);
+  return rows[0] || null;
+}
+
+module.exports = { createPayment, getLastPaymentByPersonId };

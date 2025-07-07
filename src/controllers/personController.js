@@ -1,7 +1,7 @@
 const db = require('../config/db');
 const { createPerson, findByDniLast3, getClientsByCuoteStatus } = require('../models/Person');
 const { createAttendance } = require('../models/Attendance');
-const { createPayment } = require('../models/Payments');
+const { createPayment, getLastPaymentByPersonId } = require('../models/Payments');
 
 //Crea una persona
 async function createPersonHandler(req, res, next) {
@@ -76,27 +76,46 @@ async function findByDniLast3Handler(req, res, next) {
   try {
     const { last3, apellido } = req.query;
 
-    // last3 es obligatorio y debe ser 3 dígitos
     if (!/^\d{3}$/.test(last3)) {
       return res.status(400).json({
         error: 'Debe proporcionar last3 de 3 dígitos en query string.'
       });
     }
 
-    // Llamo al modelo con opcional apellido
     const persons = await findByDniLast3({
       last3,
-      lastName: apellido   // undefined si no está
+      lastName: apellido
     });
 
     if (persons.length === 0) {
       return res.status(404).json({ error: 'No se encontró ningún cliente.' });
     }
-    if (persons.length === 1) {
-      return res.json({ count: persons.length, person: persons[0] });
+
+    // Enriquecemos con datos de pago
+    const personsWithPayment = await Promise.all(
+      persons.map(async (person) => {
+        const lastPayment = await getLastPaymentByPersonId(person.idPersona);
+
+        let cuotaEstado = 'sin datos';
+        if (lastPayment?.fechaVencimiento) {
+          const hoy = new Date();
+          const vencimiento = new Date(lastPayment.fechaVencimiento);
+          cuotaEstado = vencimiento >= hoy ? 'activa' : 'vencida';
+        }
+
+        return {
+          ...person,
+          cuota: lastPayment,
+          cuotaEstado
+        };
+      })
+    );
+
+    if (personsWithPayment.length === 1) {
+      return res.json({ count: 1, person: personsWithPayment[0] });
     }
-    // Múltiples coincidencias
-    return res.json({ count: persons.length, persons });
+
+    return res.json({ count: personsWithPayment.length, persons: personsWithPayment });
   } catch (err) {
     next(err);
   }
