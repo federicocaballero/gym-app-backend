@@ -1,10 +1,6 @@
-const express                   = require('express');
+const express = require('express');
 const { registerPaymentHandler } = require('../controllers/paymentController');
-const router                    = express.Router();
-
-// ... tus otras rutas ...
-
-// POST /api/alumnos/pagar
+const router = express.Router();
 router.post('/pagar', registerPaymentHandler);
 
 module.exports = router;

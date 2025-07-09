@@ -8,7 +8,7 @@ async function createPayment({ clientId, amount, periodFor, expiresAt, adminId ,
     VALUES ($1,$2,$3,$4,'paid',$5, $6)
     RETURNING *;
   `;
-  const values = [clientId, amount, periodFor, expiresAt,  adminId || null, type,];
+  const values = [clientId, amount, periodFor, expiresAt, adminId || null, type,];
   const { rows } = await client.query(text, values);
   return rows[0];
 }

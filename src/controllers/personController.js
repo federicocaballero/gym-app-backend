@@ -55,7 +55,7 @@ async function createPersonHandler(req, res, next) {
       const expiresAt = exp.toISOString().slice(0, 10);
 
       await createPayment(
-        { clientId: person.idPersona, amount: 0, periodFor: startDate, expiresAt, type: 'trial' },
+        { clientId: person.idPersona, amount: 0, periodFor: startDate, expiresAt, adminId, type: 'trial' },
         client
       );
     }
@@ -143,9 +143,67 @@ async function getClientsByCuote(req, res, next) {
   }
 }
 
+async function registerAttendanceHandler(req, res, next) {
+  const { personId, adminId } = req.body;
+
+  // Validaciones básicas
+  if (!personId) {
+    return res.status(400).json({ error: 'Se requiere personId' });
+  }
+
+  const client = await db.connect();
+  try {
+    await client.query('BEGIN');
+
+    // 1. Verificar que el cliente existe
+    const { rows: [person] } = await client.query(
+      'SELECT * FROM "Person" WHERE "idPersona" = $1',
+      [personId]
+    );
+
+    if (!person) {
+      return res.status(404).json({ error: 'Cliente no encontrado' });
+    }
+
+    // 2. Verificar estado de la cuota
+    const { rows: [lastPayment] } = await client.query(
+      `SELECT * FROM "Payments" 
+       WHERE "idPersona" = $1 
+       ORDER BY "periodo" DESC 
+       LIMIT 1`,
+      [personId]
+    );
+
+    if (!lastPayment || new Date(lastPayment.fechaVencimiento) < new Date()) {
+      return res.status(400).json({ 
+        error: 'No se puede registrar asistencia: cuota vencida o sin pagos registrados' 
+      });
+    }
+
+    // 3. Registrar asistencia
+    const attendance = await createAttendance(
+      { 
+        personId, 
+        status: 'present', 
+        adminId 
+      },
+      client
+    );
+
+    await client.query('COMMIT');
+    return res.status(201).json(attendance);
+
+  } catch (err) {
+    await client.query('ROLLBACK');
+    next(err);
+  } finally {
+    client.release();
+  }
+}
 
 module.exports = {
   createPersonHandler,
   findByDniLast3Handler,
-  getClientsByCuote
+  getClientsByCuote,
+  registerAttendanceHandler
 };

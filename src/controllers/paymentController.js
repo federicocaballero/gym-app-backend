@@ -1,21 +1,23 @@
 const db = require('../config/db');
 const { createPayment } = require('../models/Payments');
-
-// controllers/paymentController.js
 const { findByDniLast3 } = require('../models/Person');
 
-/**
- * POST /api/alumnos/pagar
- * Body: { last3, [apellido], amount, adminId }
- */
 async function registerPaymentHandler(req, res, next) {
-  const { last3, apellido, amount, adminId } = req.body;
+  const { last3, apellido, amount, adminId, type } = req.body;
 
   // 1) Validaciones básicas
   if (!/^\d{3}$/.test(last3))
     return res.status(400).json({ error: 'last3 debe ser 3 dígitos.' });
-  if (!(amount > 0))
-    return res.status(400).json({ error: 'amount debe ser mayor a 0.' });
+  if (!['paid', 'trial'].includes(type))
+    return res.status(400).json({ error: 'type debe ser "paid" o "trial".' });
+
+  // Validación específica para cada tipo de pago
+  if (type === 'trial' && amount !== 0) {
+    return res.status(400).json({ error: 'Los pagos trial deben tener amount = 0.' });
+  }
+  if (type === 'paid' && !(amount > 0)) {
+    return res.status(400).json({ error: 'Los pagos paid requieren amount > 0.' });
+  }
 
   const client = await db.connect();
   try {
@@ -27,34 +29,11 @@ async function registerPaymentHandler(req, res, next) {
       return res.status(404).json({ error: 'No se encontró ningún cliente.' });
     if (persons.length > 1)
       return res.status(400).json({
-        error:
-          'Múltiples clientes coinciden. Reenvía apellido completo para filtrar.',
+        error: 'Múltiples clientes coinciden. Reenvía apellido completo para filtrar.',
       });
     const clientId = persons[0].idPersona;
 
-    // 3) Obtener último pago
-    const { rows: [lastPay] = [] } = await client.query(
-      `SELECT * 
-         FROM "Payments"
-        WHERE "idPersona" = $1
-        ORDER BY "periodo" DESC
-        LIMIT 1`,
-      [clientId]
-    );
-
-    if (!lastPay) {
-      return res
-        .status(400)
-        .json({ error: 'Este cliente nunca ha registrado una cuota.' });
-    }
-    // 4) Verificar que esté vencida
-    if (lastPay.fechaVencimiento >= new Date()) {
-      return res
-        .status(400)
-        .json({ error: 'El cliente aún no tiene la cuota vencida.' });
-    }
-
-    // 5) Calcular el nuevo periodo
+    // 3) Calcular el nuevo periodo
     const periodFor = new Date(
       new Date().getFullYear(),
       new Date().getMonth(),
@@ -70,7 +49,7 @@ async function registerPaymentHandler(req, res, next) {
       .toISOString()
       .slice(0, 10);
 
-    // 6) Verificar que no haya ya un pago para este periodo
+    // 4) Verificar que no haya ya un pago para este periodo
     const { rowCount: dupCount } = await client.query(
       `SELECT 1 FROM "Payments"
          WHERE "idPersona" = $1 AND periodo = $2`,
@@ -82,14 +61,31 @@ async function registerPaymentHandler(req, res, next) {
         .json({ error: 'Ya existe un registro de cuota para este periodo.' });
     }
 
-    // 7) Insertar el pago
+    // 5) Verificación opcional del último pago (solo informativa)
+    if (type === 'paid') {
+      const { rows: [lastPay] = [] } = await client.query(
+        `SELECT * FROM "Payments"
+         WHERE "idPersona" = $1 AND type = 'paid'
+         ORDER BY "periodo" DESC
+         LIMIT 1`,
+        [clientId]
+      );
+
+      // Solo muestra advertencia pero no bloquea el pago
+      if (lastPay && lastPay.fechaVencimiento >= new Date()) {
+        console.warn(`El cliente ${clientId} está pagando antes del vencimiento`);
+      }
+    }
+
+    // 6) Insertar el pago
     const payment = await createPayment(
       {
         clientId,
         amount,
         periodFor,
+        adminId,
         expiresAt,
-        type: 'paid',
+        type,
       },
       client
     );
@@ -103,4 +99,5 @@ async function registerPaymentHandler(req, res, next) {
     client.release();
   }
 }
+
 module.exports = { registerPaymentHandler };

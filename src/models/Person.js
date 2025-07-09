@@ -32,7 +32,7 @@ async function findByDniLast3({ last3, lastName }) {
 
   // Si me pasaron apellido, lo agrego al WHERE
   if (lastName) {
-    text += ` AND LOWER(apellido) LIKE LOWER($2) || '%'`;
+    text += ` AND LOWER(TRIM(apellido)) = LOWER(TRIM($2))`;
     values.push(lastName);
   }
 
